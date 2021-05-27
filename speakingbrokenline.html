@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My Chart</title>
+  <script
+			  src="https://code.jquery.com/jquery-3.6.0.js"
+			  integrity="sha256-H+K7U5CnXl1h5ywQfKtSj8PCmoN9aaq30gDh27Xc0jk="
+			  crossorigin="anonymous"></script>
+  <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/chart.min.js" integrity="sha512-tOcHADT+YGCQqH7YO99uJdko6L8Qk5oudLN6sCeI4BQnpENq6riR6x9Im+SGzhXpgooKBRkPsget4EOoH5jNCw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/chart.esm.js" integrity="sha512-RW3tMW8R0SQ/RneTRVj2mSwglA6aHMKI/PvE9GHXF9bNNCq0OY2KAUUGtWSvxBWs/x/SFvFCYA5ajrc/9UP2wA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/chart.esm.min.js" integrity="sha512-Tt9OX9dS4/BP6yf/a4fiLgrIpQQqzn91gpcsPUbBka9h84Kr0EIaMsnl9Nk5XlvrdeoYrDuT9E0zlHDl4SxTgw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/chart.js" integrity="sha512-or2Rj8rtp6G4AA7LOM1DVfQmzsevkILKgY1LLJ5kEDv3UCiEt9bmHJn7LNmo8BC5hxJCQ3cosqo1t77+p/yOfg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/helpers.esm.js" integrity="sha512-HLnswVG1wR71tBSwEbgZdmrOrOVqm8ECpPEv73masA+IuMhzB3exRNgnaHBNMW7t92ey6aGn+ZEQDx1H4sYWHg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.2.1/helpers.esm.min.js" integrity="sha512-4OeC7P+qUXB7Kpyeu1r5Y209JLXfCkwGKDpk8vnXzeNGMnpTr6hzOz2lMm7h0oxRBVu2ZCPRkCBPMmIlWsbaHg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css" integrity="sha384-B0vP5xmATw1+K9KRQjQERJvTumQW0nPEzvF6L/Z6nronJ3oUOFUFpCjEUQouq2+l" crossorigin="anonymous">
+</head>
+<body>
+  <div class="container">
+    <input type="text" id="sessionfinder" onkeypress="javascript:onReturn(event)"></input>
+    <button type='button' class='findsession'>find session</button>
+  </div>
+  <div class="container">
+    <canvas id="mychart" width="300" height="300" hidden>
+    </canvas>
+  </div>
+  <script type="text/javascript">
+    $(".findsession").click(function()
+    {
+      buildChart();
+    });
+    function onReturn(event)
+    {
+      if (event.keyCode == 13 || event.which == 13)
+      {
+        buildChart();
+      }
+    }
+    function buildChart(){
+      Chart.helpers.each(Chart.instances, function(instance){
+        instance.destroy();
+      });
+      let sessionid = document.getElementById('sessionfinder').value
+      let targetURL = "https://square-voice-6674.guapro.workers.dev/?https://test-foretell-bpalms.adeptreality.com/sessions/userspeakingbreakdown/" + sessionid + "/" + Intl.DateTimeFormat().resolvedOptions().timeZone
+      let retrieveMetricsData = {};
+      $.ajax({
+              url: targetURL,
+              type: "GET",
+              dataType: "json",
+              crossDomain: true,
+              headers: {'Access-Control-Allow-Origin':'*'},
+              format: "json",
+              success:function(json){
+                  console.log('message: ' + "success"+ JSON.stringify(json));
+                  retrieveMetricsData = json
+                  const labels = retrieveMetricsData.Graph.labelData;
+                  let datasets = []
+                  let ylabels = []
+                  ylabels.push(' ')
+                  color_offset = 0
+                  red_shift = 255
+                  retrieveMetricsData.Graph.Data.forEach((userData) => {
+                    ylabels.push(userData.username)
+                    let dataset = {
+                      label: userData.username,
+                      data: userData.periods,
+                      fill:false,
+                      tension:0,
+                      backgroundColor: 'rgb(' + (red_shift - color_offset).toString() + ', 99, 132)',
+			                borderColor: 'rgba('+ (red_shift - color_offset).toString() + ', 99, 132, 0.2)'}
+                    datasets.push(dataset)
+                    color_offset = color_offset + 15;
+                  });
+                  ylabels.push('EMPTY')
+                  const data = {
+                    labels: labels,
+                    datasets: datasets,
+                    yLabels: ylabels,
+                  };
+                  const config = {
+                    type: 'line',
+                    data: data,
+                    options: {
+                      responsive: true,
+                      plugins: {
+                        title: {
+                          display: true,
+                          text: retrieveMetricsData.Graph.graphTitle
+                        },
+                      },
+                      interaction: {
+                        intersect: false,
+                      },
+                      scales: {
+                        x: {
+                          display: true,
+                          title: {
+                            display: true,
+                            text: 'Time'
+                          }
+                        },
+                        y: {
+                          title: {
+                            display: true,
+                            text: 'Username'
+                          },
+                          beginAtZero: true,
+                          ticks: {
+                  					stepSize: 1,
+                  					callback: function (value, index, values) {
+                  						console.log('value, index, values', value, index, values);
+                  						return ylabels[index];
+                  					},
+                  				},
+                        }
+                      }
+                    },
+                  };
+                  var myChart = new Chart(
+                    document.getElementById('mychart'),
+                    config
+                  );
+                  $('#mychart').removeAttr('hidden');
+              },
+              error:function(error){
+                  console.log('message Error' + JSON.stringify(error));
+              }
+          });
+    }
+  </script>
+</body>
+</html>
