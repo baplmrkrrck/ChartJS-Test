@@ -28,24 +28,48 @@
   </div>
 
   <script type="text/javascript">
+    var getUrlParameter = function getUrlParameter(sParam) {
+      var sPageURL = window.location.search.substring(1),
+          sURLVariables = sPageURL.split('&'),
+          sParameterName,
+          i;
+
+      for (i = 0; i < sURLVariables.length; i++) {
+          sParameterName = sURLVariables[i].split('=');
+
+          if (sParameterName[0] === sParam) {
+              return typeof sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+          }
+      }
+      return false;
+    };
+
+    window.onload = function()
+    {
+      buildChart(getUrlParameter('session'))
+    };
+
     $(".findsession").click(function()
     {
-      buildChart();
+      buildChart("");
     });
 
     function onReturn(event)
     {
       if (event.keyCode == 13 || event.which == 13)
       {
-        buildChart();
+        buildChart("");
       }
     }
 
-    function buildChart(){
+    function buildChart(sessionid){
       Chart.helpers.each(Chart.instances, function(instance){
         instance.destroy();
       });
-      let sessionid = document.getElementById('sessionfinder').value
+      if (sessionid == "")
+      {
+        let sessionid = document.getElementById('sessionfinder').value
+      }
       let targetURL = "https://square-voice-6674.guapro.workers.dev/?https://test-foretell-bpalms.adeptreality.com/sessions/userbreakdown/3/" + sessionid + "/America/New_York"
       let retrieveMetricsData = {};
       $.ajax({
